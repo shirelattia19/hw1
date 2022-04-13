@@ -1,4 +1,7 @@
 import torch
+import torchvision
+import torchvision.transforms as tvtf
+from torch import Tensor
 
 
 class TensorView(object):
@@ -12,7 +15,7 @@ class TensorView(object):
     def __call__(self, tensor: torch.Tensor):
         # TODO: Use Tensor.view() to implement the transform.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        return Tensor.view(tensor)
         # ========================
 
 
@@ -29,7 +32,8 @@ class InvertColors(object):
         """
         # TODO: Invert the colors of the input image.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        res = torchvision.transforms.RandomInvert(1)(x)
+        return res
         # ========================
 
 
@@ -41,7 +45,12 @@ class FlipUpDown(object):
         """
         # TODO: Flip the input image so that up is down.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        # transform = tvtf.ToPILImage()
+        # img = transform(x)
+        # res = torchvision.transforms.RandomHorizontalFlip(p=1).forward(img)
+        # transformToTensor = tvtf.ToTensor()
+        # return transformToTensor(res)
+        return torch.flip(x, [1])
         # ========================
 
 
