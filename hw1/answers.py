@@ -9,7 +9,15 @@ math (delimited with $$).
 # Part 1 answers
 
 part1_q1 = r"""
-**Your answer:**
+**Your answer:
+1. False: the in-sample is the error rate we get on the same data set we used to build our predictor and not on a 
+new dataset such as the test set.
+2. False: the proportion we chose for the train/test sets has an impact on the goodness of our model. if the train set 
+is too small, we could get an over-fitted model. So the way we split the data has a direct impact on our model. 
+3. True: the test set is our way to test our model. the test set cannot be used during any part of the process until we 
+get to the point we want to test the model. we cannot extract any information from it. 
+4. TODO
+**
 
 
 Write your answer using **markdown** and $\LaTeX$:
