@@ -52,9 +52,17 @@ class SVMHingeLoss(ClassifierLoss):
 
         loss = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
-        # ========================
+        num_train = x.shape[0]
+        margin = x_scores - x_scores[range(num_train), y].reshape(-1, 1) + 1
+        margin[range(num_train), y] = 0
+        margin1 = torch.sum(margin, 1)
+        # margin-=1
 
+        loss = torch.sum(margin1[margin1 > 0])
+        loss /= num_train
+        # ========================
+        assert loss.dtype == torch.Tensor
+        return loss
         # TODO: Save what you need for gradient calculation in self.grad_ctx
         # ====== YOUR CODE: ======
         raise NotImplementedError()

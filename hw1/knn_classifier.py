@@ -1,11 +1,18 @@
+import itertools
+from copy import copy
+from random import randrange
+
 import numpy as np
 import torch
+from sklearn.model_selection import train_test_split
 from torch import Tensor
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, Subset, SubsetRandomSampler
 
 import cs236781.dataloader_utils as dataloader_utils
 
 from . import dataloaders
+from .dataloaders import create_train_validation_loaders
+from .datasets import SubsetDataset
 
 
 class KNNClassifier(object):
@@ -31,9 +38,18 @@ class KNNClassifier(object):
         #     y_train.
         #  2. Save the number of classes as n_classes.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        x = []
+        y = []
+        for batch_idx, batch in enumerate(dl_train):
+            x.append(batch[0])
+            y.append(batch[1])
+        x_train = torch.cat(x)
+        y_train = torch.cat(y)
+        try:
+            n_classes = dl_train.dataset.dataset.source_dataset.classes
+        except:
+            n_classes = dl_train.dataset.source_dataset.classes
         # ========================
-
         self.x_train = x_train
         self.y_train = y_train
         self.n_classes = n_classes
@@ -48,7 +64,7 @@ class KNNClassifier(object):
 
         # Calculate distances between training and test samples
         dist_matrix = l2_dist(self.x_train, x_test)
-
+        dist_matrix = torch.transpose(dist_matrix, 0, 1)
         # TODO:
         #  Implement k-NN class prediction based on distance matrix.
         #  For each training sample we'll look for it's k-nearest neighbors.
@@ -63,7 +79,12 @@ class KNNClassifier(object):
             #  - Set y_pred[i] to the most common class among them
             #  - Don't use an explicit loop.
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            smallest_k = torch.topk(dist_matrix[i], self.k, largest=False)
+            indices = smallest_k.indices.tolist()
+            output_values = [self.y_train[indice] for indice in indices]
+            prediction = max(set(output_values), key=output_values.count)
+            y_pred[i] = prediction
+
             # ========================
 
         return y_pred
@@ -89,14 +110,12 @@ def l2_dist(x1: Tensor, x2: Tensor):
     #    combine the three terms efficiently.
     #  - Don't use torch.cdist
 
-    dists = None
     # ====== YOUR CODE: ======
     x_norm = (x1 ** 2).sum(1).view(-1, 1)
     y_norm = (x2 ** 2).sum(1).view(1, -1)
 
     y_t = torch.transpose(x2, 0, 1)
     dists = torch.sqrt(x_norm + y_norm - 2.0 * torch.mm(x1, y_t))
-    return dists
     # ========================
 
     return dists
@@ -114,12 +133,34 @@ def accuracy(y: Tensor, y_pred: Tensor):
     assert y.dim() == 1
 
     # TODO: Calculate prediction accuracy. Don't use an explicit loop.
-    accuracy = None
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    accuracy = list(torch.eq(y, y_pred)).count(True) / len(y)
     # ========================
 
     return accuracy
+
+
+def crossValSplit(dataset, numFolds):
+    dataSplit = list()
+    dataCopy = list(dataset)
+    foldSize = int(len(dataset) / numFolds)
+    for _ in range(numFolds):
+        fold = list()
+        while len(fold) < foldSize:
+            index = randrange(len(dataCopy))
+            fold.append(dataCopy.pop(index))
+        dataSplit.append(fold)
+    return dataSplit
+
+
+def crossValSplit2(dataset, numFolds):
+    ratio = 1 / numFolds
+    folds_idx = []
+    first_idx = list(range(len(dataset)))
+    for fold in range(numFolds):
+        first_idx, second_idx = train_test_split(first_idx, test_size=ratio)
+        folds_idx.append(second_idx)
+    return folds_idx
 
 
 def find_best_k(ds_train: Dataset, k_choices, num_folds):
@@ -135,10 +176,9 @@ def find_best_k(ds_train: Dataset, k_choices, num_folds):
     """
 
     accuracies = []
-
+    folds_idx = crossValSplit2(dataset=ds_train, numFolds=num_folds)
     for i, k in enumerate(k_choices):
         model = KNNClassifier(k)
-
         # TODO:
         #  Train model num_folds times with different train/val data.
         #  Don't use any third-party libraries.
@@ -147,7 +187,23 @@ def find_best_k(ds_train: Dataset, k_choices, num_folds):
         #  random split each iteration), or implement something else.
 
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        acc = []
+        for j in range(num_folds):
+            # dl_train, dl_val = create_train_validation_loaders(dataset=ds_train, validation_ratio=0.2)
+            train_idx = copy(folds_idx)
+            valid_idx = train_idx.pop(j)
+            train_idx = list(itertools.chain.from_iterable(train_idx))
+            ds_tr = Subset(ds_train, train_idx)
+            ds_valid = Subset(ds_train, valid_idx)
+            dl_train = DataLoader(ds_tr,)
+            dl_valid = DataLoader(ds_valid,)
+
+            model.train(dl_train)
+            x_test, y_test = dataloader_utils.flatten(dl_valid)
+            y_pred = model.predict(x_test)
+            accuracy_list = accuracy(y_test, y_pred)
+            acc.append(accuracy_list)
+        accuracies.append(acc)
         # ========================
 
     best_k_idx = np.argmax([np.mean(acc) for acc in accuracies])
