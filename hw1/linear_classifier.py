@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from torch import Tensor
 from collections import namedtuple
@@ -105,7 +106,29 @@ class LinearClassifier(object):
             #     using the weight_decay parameter.
 
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            loss_history_train = []
+            loss_history_valid = []
+            accuracy_train = []
+            accuracy_valid = []
+            for batch_idx, batch in enumerate(dl_train):
+                y_pred, x_scores = self.predict(batch[0])
+                loss = loss_fn.loss(batch[0], batch[1], x_scores, y_pred)
+                grad = loss_fn.grad()
+                grad += weight_decay * self.weights
+                self.weights -= learn_rate*grad
+                loss_history_train.append(loss)
+                accuracy_train.append(self.evaluate_accuracy(batch[1], y_pred))
+
+            for batch_idx, batch in enumerate(dl_valid):
+                y_pred, x_scores = self.predict(batch[0])
+                loss = loss_fn.loss(batch[0], batch[1], x_scores, y_pred)
+                loss_history_valid.append(loss)
+                accuracy_valid.append(self.evaluate_accuracy(batch[1], y_pred))
+
+            train_res = Result(accuracy=accuracy_train,
+                               loss=loss_history_train)
+            valid_res = Result(accuracy=accuracy_valid,
+                               loss=loss_history_valid)
             # ========================
             print(".", end="")
 
@@ -126,20 +149,23 @@ class LinearClassifier(object):
         #  The output shape should be (n_classes, C, H, W).
 
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+
+        w_images = torch.zeros([self.n_classes] + img_shape)
+        w_images = np.dot(layer, self.weights).T
+
         # ========================
 
         return w_images
 
 
 def hyperparams():
-    hp = dict(weight_std=0.0, learn_rate=0.0, weight_decay=0.0)
+    hp = dict(weight_std=0.0, learn_rate=0.01, weight_decay=0.01)
 
     # TODO:
     #  Manually tune the hyperparameters to get the training accuracy test
     #  to pass.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+
     # ========================
 
     return hp

@@ -1,5 +1,6 @@
 import numpy as np
 import sklearn
+from numpy.linalg import inv
 from pandas import DataFrame
 from typing import List
 from sklearn.base import BaseEstimator, RegressorMixin, TransformerMixin
@@ -16,6 +17,8 @@ class LinearRegressor(BaseEstimator, RegressorMixin):
 
     def __init__(self, reg_lambda=0.1):
         self.reg_lambda = reg_lambda
+        self.weights_ = np.ndarray()
+
 
     def predict(self, X):
         """
@@ -32,7 +35,7 @@ class LinearRegressor(BaseEstimator, RegressorMixin):
 
         y_pred = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        y_pred = np.multiply(self.weights_.T, X)
         # ========================
 
         return y_pred
@@ -51,7 +54,12 @@ class LinearRegressor(BaseEstimator, RegressorMixin):
 
         w_opt = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        y_pred = self.predict(X)
+        loss = mse_score(y, y_pred) + r2_score(y, y_pred)
+        dimension = X.shape[1]
+        A = np.identity(dimension)
+        A[0, 0] = 0
+        w_opt = inv(X.transpose().dot(X)+self.reg_lambda * A).dot(X.transpose()).dot(y)
         # ========================
 
         self.weights_ = w_opt
@@ -62,7 +70,7 @@ class LinearRegressor(BaseEstimator, RegressorMixin):
 
 
 def fit_predict_dataframe(
-    model, df: DataFrame, target_name: str, feature_names: List[str] = None,
+        model, df: DataFrame, target_name: str, feature_names: List[str] = None,
 ):
     """
     Calculates model predictions on a dataframe, optionally with only a subset of
@@ -100,7 +108,8 @@ class BiasTrickTransformer(BaseEstimator, TransformerMixin):
 
         xb = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        xb = np.hstack((np.ones(X.shape), X))[:, X.shape[1] - 1:]
+
         # ========================
 
         return xb
@@ -163,7 +172,12 @@ def top_correlated_features(df: DataFrame, target_feature, n=5):
     # TODO: Calculate correlations with target and sort features by it
 
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    target_correlation = df.corr()  # .loc[target_feature].drop(target_feature)
+    target_correlation["sort_val"] = abs(target_correlation[target_feature])
+    target_correlation = target_correlation[[target_feature, "sort_val"]]
+    top = target_correlation.sort_values('sort_val', ascending=False).drop(target_feature).head(n).drop('sort_val', 1)
+    top_n_features = list(top.index)
+    top_n_corr = [top.loc[x][target_feature] for x in top_n_features]
     # ========================
 
     return top_n_features, top_n_corr
@@ -179,7 +193,7 @@ def mse_score(y: np.ndarray, y_pred: np.ndarray):
 
     # TODO: Implement MSE using numpy.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    mse = np.mean((y_pred-y)**2)
     # ========================
     return mse
 
@@ -194,13 +208,13 @@ def r2_score(y: np.ndarray, y_pred: np.ndarray):
 
     # TODO: Implement R^2 using numpy.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    r2 = 1 - np.sum((y - y_pred) ** 2) / np.sum((y - np.mean(y)) ** 2)
     # ========================
     return r2
 
 
 def cv_best_hyperparams(
-    model: BaseEstimator, X, y, k_folds, degree_range, lambda_range
+        model: BaseEstimator, X, y, k_folds, degree_range, lambda_range
 ):
     """
     Cross-validate to find best hyperparameters with k-fold CV.

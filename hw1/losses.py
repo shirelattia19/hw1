@@ -61,14 +61,18 @@ class SVMHingeLoss(ClassifierLoss):
         loss = torch.sum(margin1[margin1 > 0])
         loss /= num_train
         # ========================
-        assert loss.dtype == torch.Tensor
-        return loss
+
+
+
         # TODO: Save what you need for gradient calculation in self.grad_ctx
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        self.grad_ctx["num_train"] = num_train
+        self.grad_ctx["margin"] = margin
+        self.grad_ctx["x"] = x
+        self.grad_ctx["y"] = y
         # ========================
 
-        return loss
+        return loss.reshape([1])
 
     def grad(self):
         """
@@ -80,10 +84,26 @@ class SVMHingeLoss(ClassifierLoss):
         #  Implement SVM loss gradient calculation
         #  Same notes as above. Hint: Use the matrix M from above, based on
         #  it create a matrix G such that X^T * G is the gradient.
-
+        # Wk = Wk-1 - nk * gradW * L(Wk-1)
+        # gradW * L(Wk-1) size = D+1 * C = features * n_classes
         grad = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        num_train = self.grad_ctx["num_train"]
+        margin = self.grad_ctx["margin"]
+        x = self.grad_ctx["x"]
+        y = self.grad_ctx["y"]
+        margin2 = margin.clone()
+        margin2[margin2 > 0] = 1
+        margin2[margin2 <= 0] = 0
+        margin2[range(num_train), y] = -1
+        margin3 = margin.clone()
+        margin3[margin2 > 0] = 1
+        margin3[margin2 <= 0] = 0
+        margin3[range(num_train), y] = torch.sum(margin3, axis=1) * -1
+        dW = x.t() @ margin3
+        dW /= num_train
+        grad = dW
+
         # ========================
 
         return grad

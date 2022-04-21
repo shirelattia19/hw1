@@ -67,10 +67,13 @@ def create_train_validation_loaders(
     #  Hint: you can specify a Sampler class for the `DataLoader` instance
     #  you create.
     # ====== YOUR CODE: ======
-    train_idx, val_idx = train_test_split(list(range(len(dataset))), test_size=validation_ratio)
-    ds_train = Subset(dataset, train_idx)
-    ds_valid = Subset(dataset, val_idx)
-    dl_train = DataLoader(ds_train, batch_size=batch_size, num_workers=num_workers, sampler=SubsetRandomSampler(train_idx))
-    dl_valid = DataLoader(ds_valid, batch_size=batch_size, num_workers=num_workers, sampler=SubsetRandomSampler(val_idx))
+    # train_idx, val_idx = train_test_split(list(range(len(dataset))), test_size=validation_ratio)
+    # ds_train = Subset(dataset, train_idx)
+    # ds_valid = Subset(dataset, val_idx)
+    ds_train, ds_valid = train_test_split(dataset, test_size=validation_ratio)
+    dl_train = DataLoader(ds_train, batch_size=batch_size,
+                          num_workers=num_workers, sampler=SubsetRandomSampler(list(range(len(ds_train)))))
+    dl_valid = DataLoader(ds_valid, batch_size=batch_size,
+                          num_workers=num_workers, sampler=SubsetRandomSampler(list(range(len(ds_valid)))))
     # ========================
     return dl_train, dl_valid
