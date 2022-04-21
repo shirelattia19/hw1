@@ -17,7 +17,7 @@ class LinearRegressor(BaseEstimator, RegressorMixin):
 
     def __init__(self, reg_lambda=0.1):
         self.reg_lambda = reg_lambda
-        self.weights_ = np.ndarray()
+        #self.weights_ = np.ndarray()
 
 
     def predict(self, X):
@@ -35,7 +35,7 @@ class LinearRegressor(BaseEstimator, RegressorMixin):
 
         y_pred = None
         # ====== YOUR CODE: ======
-        y_pred = np.multiply(self.weights_.T, X)
+        y_pred = X.dot(self.weights_)
         # ========================
 
         return y_pred
@@ -54,12 +54,12 @@ class LinearRegressor(BaseEstimator, RegressorMixin):
 
         w_opt = None
         # ====== YOUR CODE: ======
-        y_pred = self.predict(X)
-        loss = mse_score(y, y_pred) + r2_score(y, y_pred)
+        #y_pred = self.predict(X)
+        #loss = mse_score(y, y_pred) + r2_score(y, y_pred)
         dimension = X.shape[1]
         A = np.identity(dimension)
         A[0, 0] = 0
-        w_opt = inv(X.transpose().dot(X)+self.reg_lambda * A).dot(X.transpose()).dot(y)
+        w_opt = inv(X.transpose().dot(X)+self.reg_lambda).dot(X.transpose()).dot(y)
         # ========================
 
         self.weights_ = w_opt
@@ -193,7 +193,7 @@ def mse_score(y: np.ndarray, y_pred: np.ndarray):
 
     # TODO: Implement MSE using numpy.
     # ====== YOUR CODE: ======
-    mse = np.mean((y_pred-y)**2)
+    mse = np.mean((y_pred-y)**2) + r2_score(y, y_pred)
     # ========================
     return mse
 
