@@ -153,25 +153,36 @@ class BostonFeaturesTransformer(BaseEstimator, TransformerMixin):
 
         X_transformed = None
         # ====== YOUR CODE: ======
+        X_copy = np.copy(X)
         poly = PolynomialFeatures(self.degree)
-        X_transformed = poly.fit_transform(X)
-        # features_indexes = {'CRIM': 0, 'ZN': 1, 'INDUS': 2, 'CHAS': 3, 'NOX': 4, 'RM': 5, 'AGE': 6, 'DIS': 7, 'RAD': 8,
-        #                     'TAX': 9, 'PTRATIO': 10, 'B': 11, 'LSTAT': 12, 'MEDV': 13}
-        # new_column = np.log(X_transformed[:, features_indexes['AGE']])
+        X_transformed = poly.fit_transform(X_copy)
+        features_indexes = {'CRIM': 0, 'ZN': 1, 'INDUS': 2, 'CHAS': 3, 'NOX': 4, 'RM': 5, 'AGE': 6, 'DIS': 7, 'RAD': 8,
+                            'TAX': 9, 'PTRATIO': 10, 'B': 11, 'LSTAT': 12, 'MEDV': 13}
+        new_column = np.exp(X_transformed[:, features_indexes['NOX']])
+        X_transformed = np.c_[X_transformed, new_column]
+        # new_column = np.exp(X_transformed[:, features_indexes['INDUS']])
         # X_transformed = np.c_[X_transformed, new_column]
-        # new_column = np.exp(-1 * X_transformed[:, features_indexes['NOX']])
+        new_column = np.exp(X_transformed[:, features_indexes['CHAS']])
+        X_transformed = np.c_[X_transformed, new_column]
+        new_column = np.exp(X_transformed[:, features_indexes['DIS']])
+        X_transformed = np.c_[X_transformed, new_column]
+        # new_column = np.exp(X_transformed[:, features_indexes['RAD']])
         # X_transformed = np.c_[X_transformed, new_column]
-        # new_column = np.exp(X_transformed[:, features_indexes['NOX']])
+        # new_column = np.exp(X_transformed[:, features_indexes['TAX']])
         # X_transformed = np.c_[X_transformed, new_column]
-        # new_column = np.log(X_transformed[:, features_indexes['DIS']])
+        # new_column = np.exp(X_transformed[:, features_indexes['PTRATIO']])
         # X_transformed = np.c_[X_transformed, new_column]
-        # new_column = np.exp(-1 * X_transformed[:, features_indexes['DIS']])
+        # new_column = np.exp(X_transformed[:, features_indexes['LSTAT']])
         # X_transformed = np.c_[X_transformed, new_column]
-        # new_column = np.exp(-1 * X_transformed[:, features_indexes['LSTAT']])
+        new_column = np.log(X_transformed[:, features_indexes['INDUS']])
+        X_transformed = np.c_[X_transformed, new_column]
+        new_column = np.log(X_transformed[:, features_indexes['NOX']])
+        X_transformed = np.c_[X_transformed, new_column]
+        # new_column = np.sqrt(X_transformed[:, features_indexes['CHAS']])
+        # X_transformed = np.c_[X_transformed, new_column]
+        # new_column = np.sqrt(X_transformed[:, features_indexes['RAD']])
         # X_transformed = np.c_[X_transformed, new_column]
         # new_column = np.log(X_transformed[:, features_indexes['LSTAT']])
-        # X_transformed = np.c_[X_transformed, new_column]
-        # new_column = np.exp(X_transformed[:, features_indexes['MEDV']])
         # X_transformed = np.c_[X_transformed, new_column]
         # ========================
 
@@ -265,46 +276,29 @@ def cv_best_hyperparams(
     #  - You can use MSE or R^2 as a score.
 
     # ====== YOUR CODE: ======
-    degree_choices = list(degree_range)
-    lambda_choices = list(lambda_range)
     kf = KFold(n_splits=k_folds, random_state=None)
     mse_lambdas = []
-    for l in lambda_choices:
-        mse_score_list = []
-        for train_index, test_index in kf.split(X):
-            X_train, X_test = X[train_index, :], X[test_index, :]
-            y_train, y_test = y[train_index], y[test_index]
-            model.set_params(**{"linearregressor__reg_lambda": l})
-            model.fit(X_train, y_train)
-            pred_values = model.predict(X_test)
-
-            acc = mse_score(pred_values, y_test)
-            mse_score_list.append(acc)
-
-        avg_mse_score = sum(mse_score_list) / k_folds
-        mse_lambdas.append(avg_mse_score)
-    best_lambda_idx = np.argmin([np.mean(mse) for mse in mse_lambdas])
-    best_lambda = lambda_choices[best_lambda_idx]
-
-    mse_degrees = []
-    for d in degree_choices:
-        mse_score_list = []
-        for train_index, test_index in kf.split(X):
-            X_train, X_test = X[train_index, :], X[test_index, :]
-            y_train, y_test = y[train_index], y[test_index]
-            model.set_params(**{"linearregressor__reg_lambda": best_lambda,
+    for l in lambda_range:
+        for d in degree_range:
+            mse_score_list = []
+            model.set_params(**{"linearregressor__reg_lambda": l,
                                 "bostonfeaturestransformer__degree": d})
-            model.fit(X_train, y_train)
-            pred_values = model.predict(X_test)
+            for train_index, test_index in kf.split(X):
+                X_train, X_test = X[train_index, :], X[test_index, :]
+                y_train, y_test = y[train_index], y[test_index]
+                model.fit(X_train, y_train)
+                pred_values = model.predict(X_test)
 
-            acc = mse_score(pred_values, y_test)
-            mse_score_list.append(acc)
+                mse_score_value = mse_score(pred_values, y_test)
+                mse_score_list.append(mse_score_value)
 
-        avg_mse_score = sum(mse_score_list) / k_folds
-        mse_degrees.append(avg_mse_score)
-    best_degree_idx = np.argmin([np.mean(mse) for mse in mse_degrees])
-    best_degree = degree_choices[best_degree_idx]
-
+            avg_mse_score = sum(mse_score_list) / k_folds
+            mse_lambdas.append(avg_mse_score)
+    best_mse_idx = np.argmin([np.mean(mse) for mse in mse_lambdas])
+    best_degree_idx = int(best_mse_idx % len(degree_range))
+    best_lambda_idx = int(best_mse_idx / len(degree_range))
+    best_lambda = lambda_range[best_lambda_idx]
+    best_degree = degree_range[best_degree_idx]
     best_params = {"linearregressor__reg_lambda": best_lambda, "bostonfeaturestransformer__degree": best_degree}
     # ========================
 

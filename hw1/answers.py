@@ -206,7 +206,17 @@ An equation: $e^{i\pi} -1 = 0$
 """
 
 part4_q2 = r"""
-**Your answer:**
+**
+
+1. The model is still linear since the points are separated by a linear classifier/hyperplane. 
+
+2. In the theory, if we knows exactly which function is mapped,  we could compute the value and then fit the function but 
+there exist many complicated function and since all the purpose is to predict a function we don't know, this approach 
+isn't exploitable for any non linear function.
+
+3. Yes it will still be an hyperplane and by feature mapping we will get more features and we could be able to better 
+separate the different points and then get better results.
+**
 
 
 Write your answer using **markdown** and $\LaTeX$:
@@ -219,7 +229,19 @@ An equation: $e^{i\pi} -1 = 0$
 """
 
 part4_q3 = r"""
-**Your answer:**
+**
+
+1. The numpy logspace() function is used to create an array of equally spaced values between two numbers on the 
+logarithmic scale contrary to the  numpy linspace() function which creates an array of equally spaced values on the 
+linear scale.
+The $\lambda$ hyperparameter has a multiplication on the learning process then for this kind of hyperparameters, 
+it is better to use np.logspace than np.linspace.
+
+2. On the hyperparameters CV, the the data was fitted:
+
+len(degree_range) * len(lambda_range) * k_folds = 20 * 3 * 3 = 180
+
+**
 
 
 Write your answer using **markdown** and $\LaTeX$:
