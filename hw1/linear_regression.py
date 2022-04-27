@@ -89,6 +89,7 @@ def fit_predict_dataframe(
     y = frame.pop(target_name)
     if feature_names:
         frame = frame[feature_names]
+    frame = frame.values
     y_pred = model.fit_predict(frame, y)
 
     # ========================
@@ -282,7 +283,7 @@ def cv_best_hyperparams(
 
         avg_mse_score = sum(mse_score_list) / k_folds
         mse_lambdas.append(avg_mse_score)
-    best_lambda_idx = np.argmax([np.mean(mse) for mse in mse_lambdas])
+    best_lambda_idx = np.argmin([np.mean(mse) for mse in mse_lambdas])
     best_lambda = lambda_choices[best_lambda_idx]
 
     mse_degrees = []
@@ -301,7 +302,7 @@ def cv_best_hyperparams(
 
         avg_mse_score = sum(mse_score_list) / k_folds
         mse_degrees.append(avg_mse_score)
-    best_degree_idx = np.argmax([np.mean(mse) for mse in mse_degrees])
+    best_degree_idx = np.argmin([np.mean(mse) for mse in mse_degrees])
     best_degree = degree_choices[best_degree_idx]
 
     best_params = {"linearregressor__reg_lambda": best_lambda, "bostonfeaturestransformer__degree": best_degree}

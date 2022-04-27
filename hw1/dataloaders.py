@@ -70,10 +70,15 @@ def create_train_validation_loaders(
     # train_idx, val_idx = train_test_split(list(range(len(dataset))), test_size=validation_ratio)
     # ds_train = Subset(dataset, train_idx)
     # ds_valid = Subset(dataset, val_idx)
-    ds_train, ds_valid = train_test_split(dataset, test_size=validation_ratio)
-    dl_train = DataLoader(ds_train, batch_size=batch_size,
-                          num_workers=num_workers, sampler=SubsetRandomSampler(list(range(len(ds_train)))))
-    dl_valid = DataLoader(ds_valid, batch_size=batch_size,
-                          num_workers=num_workers, sampler=SubsetRandomSampler(list(range(len(ds_valid)))))
+    #ds_train, ds_valid = train_test_split(dataset, test_size=validation_ratio)
+
+    array = np.arange(len(dataset))
+    np.random.shuffle(array)
+    train_idx = array[0:int((1 - validation_ratio) * len(dataset))]
+    valid_idx = array[int((1 - validation_ratio) * len(dataset)):]
+    dl_train = DataLoader(dataset, batch_size=batch_size,
+                          num_workers=num_workers, sampler=SubsetRandomSampler(train_idx))
+    dl_valid = DataLoader(dataset, batch_size=batch_size,
+                          num_workers=num_workers, sampler=SubsetRandomSampler(valid_idx))
     # ========================
     return dl_train, dl_valid
