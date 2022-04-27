@@ -1,3 +1,5 @@
+from statistics import mean
+
 import numpy as np
 import torch
 from torch import Tensor
@@ -106,31 +108,31 @@ class LinearClassifier(object):
             #     using the weight_decay parameter.
 
             # ====== YOUR CODE: ======
-            loss_history_train = []
-            loss_history_valid = []
-            accuracy_train = []
-            accuracy_valid = []
+            loss_history_train_epoch = []
+            loss_history_valid_epoch = []
+            accuracy_train_epoch = []
+            accuracy_valid_epoch = []
             for batch_idx, batch in enumerate(dl_train):
                 y_pred, x_scores = self.predict(batch[0])
                 loss = loss_fn.loss(batch[0], batch[1], x_scores, y_pred)
                 grad = loss_fn.grad()
                 grad += weight_decay * self.weights
                 self.weights -= learn_rate*grad
-                loss_history_train.append(loss)
-                accuracy_train.append(self.evaluate_accuracy(batch[1], y_pred))
+                loss_history_train_epoch.append(loss)
+                accuracy_train_epoch.append(self.evaluate_accuracy(batch[1], y_pred))
 
             for batch_idx, batch in enumerate(dl_valid):
                 y_pred, x_scores = self.predict(batch[0])
                 loss = loss_fn.loss(batch[0], batch[1], x_scores, y_pred)
-                loss_history_valid.append(loss)
-                accuracy_valid.append(self.evaluate_accuracy(batch[1], y_pred))
+                loss_history_valid_epoch.append(loss)
+                accuracy_valid_epoch.append(self.evaluate_accuracy(batch[1], y_pred))
 
-            train_res = Result(accuracy=accuracy_train,
-                               loss=loss_history_train)
-            valid_res = Result(accuracy=accuracy_valid,
-                               loss=loss_history_valid)
-            # ========================
-            print(".", end="")
+            train_res.accuracy.append(mean(accuracy_train_epoch))
+            train_res.loss.append(torch.mean(torch.stack(loss_history_train_epoch)))
+            valid_res.accuracy.append(mean(accuracy_valid_epoch))
+            valid_res.loss.append(torch.mean(torch.stack(loss_history_valid_epoch)))
+        # ========================
+        print(".", end="")
 
         print("")
         return train_res, valid_res
@@ -150,22 +152,27 @@ class LinearClassifier(object):
 
         # ====== YOUR CODE: ======
 
-        w_images = torch.zeros([self.n_classes] + img_shape)
-        w_images = np.dot(layer, self.weights).T
+        if has_bias:
+            weights = self.weights[1:]
+        else:
+            weights = self.weights
 
+        w_images = weights.T.flatten()
+        C, H, W = img_shape
+        w_images.resize_(self.n_classes, C, H, W)
         # ========================
 
         return w_images
 
 
 def hyperparams():
-    hp = dict(weight_std=0.0, learn_rate=0.01, weight_decay=0.01)
+    hp = dict(weight_std=0.0, learn_rate=0.0, weight_decay=0.0)
 
     # TODO:
     #  Manually tune the hyperparameters to get the training accuracy test
     #  to pass.
     # ====== YOUR CODE: ======
-
+    hp = dict(weight_std=0.001, learn_rate=0.01, weight_decay=0.005)
     # ========================
 
     return hp
